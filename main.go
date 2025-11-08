@@ -7,43 +7,95 @@ import (
 )
 
 const (
-	UPPER      = "ABCDEFGHIJKLMNOPQRSTUVWXYZÇ"
-	LOWER      = "abcdefghijklmnopqrstuvwxyzç"
-	NUMBER     = "0123456789"
-	SPECIAL    = "!@#$%&"
-	MAX_LENGHT = 32
+	UPPER            = "ABCDEFGHIJKLMNOPQRSTUVWXYZÇ"
+	LOWER            = "abcdefghijklmnopqrstuvwxyzç"
+	NUMBER           = "0123456789"
+	SPECIAL          = "!@#$%^&*()_+-=[]{}|;:,.<>?"
+	MAX_LENGHT int64 = 32
 )
 
-func generate_rand(cap int64) int64 {
+func generateRand(cap int64) int64 {
 	r, _ := rand.Int(rand.Reader, big.NewInt(cap))
 	return r.Int64()
+}
+
+func numberOfChars() (int64, int64, int64, int64) {
+	types := int64(4)
+	min := int64(1)
+
+	remaining := MAX_LENGHT - min*types
+
+	var nUpper, nLower, nSpecial, nNumber int64 = 1, 1, 1, 1
+
+	if remaining > 0 {
+		add := generateRand(remaining)
+		nUpper += add
+		remaining -= add
+
+		if remaining > 0 {
+			add := generateRand(remaining)
+			nLower += add
+			remaining -= add
+		}
+
+		if remaining > 0 {
+			add := generateRand(remaining)
+			nSpecial += add
+			remaining -= add
+		}
+
+		nNumber += remaining
+	}
+
+	return nLower, nUpper, nSpecial, nNumber
+}
+
+func shuffleBytes(b []byte) {
+	// Fisher-Yates
+	for i := len(b) - 1; i > 0; i-- {
+		j := int(generateRand(int64(i + 1)))
+		b[i], b[j] = b[j], b[i]
+	}
 }
 
 func main() {
 	/*
 		32 characters (UPPER, lower, special, number)
 		Random:
-			- How many characters of each type will exist in the password (at least 1 of each)
-			- Choose randomly from each array the chosen characters
-			- Mix these characters
+			DONE - How many characters of each type will exist in the password (at least 1 of each)
+			DONE - Choose randomly from each array the chosen characters
+			DONE - Mix these characters
 	*/
-	var remaining_chars int64 = MAX_LENGHT
-	var n_upper_chars int64
-	var n_lower_chars int64
-	var n_special_chars int64
-	var n_number_chars int64
 
-	n_upper_chars = generate_rand(remaining_chars)
-	remaining_chars -= n_upper_chars
-	n_lower_chars = generate_rand(remaining_chars)
-	remaining_chars -= n_lower_chars
-	n_special_chars = generate_rand(remaining_chars)
-	n_number_chars = remaining_chars
-	if remaining_chars == 0 {
-		n_special_chars--
-		n_number_chars = remaining_chars + 1
+	nLower, nUpper, nSpecial, nNumber := numberOfChars()
+
+	arrLower := make([]byte, nLower)
+	arrUpper := make([]byte, nUpper)
+	arrSpecial := make([]byte, nSpecial)
+	arrNumber := make([]byte, nNumber)
+
+	for i := 0; i < int(nLower); i++ {
+		randIndex := generateRand(int64(len(LOWER)))
+		arrLower[i] = LOWER[randIndex]
 	}
 
-	fmt.Printf("Upper: %d, Lower: %d, Special: %d, Number: %d\n",
-		n_upper_chars, n_lower_chars, n_special_chars, n_number_chars)
+	for i := 0; i < int(nUpper); i++ {
+		randIndex := generateRand(int64(len(UPPER)))
+		arrUpper[i] = UPPER[randIndex]
+	}
+
+	for i := 0; i < int(nSpecial); i++ {
+		randIndex := generateRand(int64(len(SPECIAL)))
+		arrSpecial[i] = SPECIAL[randIndex]
+	}
+
+	for i := 0; i < int(nNumber); i++ {
+		randIndex := generateRand(int64(len(NUMBER)))
+		arrNumber[i] = NUMBER[randIndex]
+	}
+
+	arrFinal := append(append(append(arrLower, arrUpper...), arrSpecial...), arrNumber...)
+
+	shuffleBytes(arrFinal)
+	fmt.Print(string(arrFinal))
 }
